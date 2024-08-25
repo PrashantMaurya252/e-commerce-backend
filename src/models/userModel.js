@@ -32,6 +32,15 @@ const userSchema = new mongoose.Schema({
         type:String,
         required:[true,"Pasword is required"]
     },
+
+    isAdmin:{
+        type:Boolean,
+        default:false
+    },
+    isSeller:{
+        type:Boolean,
+        default:false
+    },
     favourites:[
         {
             item:{
