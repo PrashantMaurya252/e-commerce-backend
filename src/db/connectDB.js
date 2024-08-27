@@ -9,3 +9,5 @@ async function connectDB(){
         process.exit(1)
     }
 }
+
+export default connectDB
