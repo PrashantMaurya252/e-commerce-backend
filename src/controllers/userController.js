@@ -17,7 +17,7 @@ const generateAccessToken = async(userId) =>{
 }
 
 const registerUser = asyncHandler(async(req,res)=>{
-    const {username,fullName,email,password} = req.body()
+    const {username,fullName,email,password} = req.body
     if([fullName,username,email,password].some((field)=>field.trim() === "")){
         throw new ApiError(409,"All fields are required")
     }
@@ -58,5 +58,41 @@ if(!createdUser){
 return res.status(201).json(
     new ApiResponse(200,createdUser,"User created successfully")
 )
+})
+
+
+const loginUser = asyncHandler(async(req,res)=>{
+    const {username,email,password} = req.body
+
+    if(!(username || email)){
+        throw new ApiError(400,"Username or email is required")
+    }
+
+    const user = await User.findOne({$or:[{email},{username}]})
+
+    if(!user){
+        throw new ApiError(401,"user does not exist")
+    }
+
+    const isValidPassword = await user.isPasswordCorrect(password)
+
+    if(!isValidPassword){
+        throw new ApiError(404,"Invalid credentials")
+    }
+
+    const {accessToken} = await generateAccessToken(user._id)
+
+    const loggedInUser = await User.findById(user._id).select("-password")
+
+    const options ={
+        httpOnly:true,
+        secure:true
+    }
+
+    return res.status(200).
+    cookies("accessToken",accessToken,options)
+    .json(ApiResponse(200,{
+        user:loggedInUser,accessToken
+    },"user logged in successfully"))
 })
 
