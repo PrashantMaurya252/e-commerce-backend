@@ -1,0 +1,62 @@
+import { asyncHandler } from "../utils/asyncHandler";
+import { ApiError } from "../utils/ApiError";
+import { ApiResponse } from "../utils/ApiResponse";
+import { User } from "../models/userModel";
+import { uploadOnCloudinary } from "../utils/cloudinary";
+
+const generateAccessToken = async(userId) =>{
+    try {
+        const user = await User.findById(userId)
+        const accessToken = user.generateAccessToken()
+
+        await user.save({validateBeforeSave:false})
+        return {accessToken}
+    } catch (error) {
+        throw new ApiError(500,"Something went wrong while generating access token")
+    }
+}
+
+const registerUser = asyncHandler(async(req,res)=>{
+    const {username,fullName,email,password} = req.body()
+    if([fullName,username,email,password].some((field)=>field.trim() === "")){
+        throw new ApiError(409,"All fields are required")
+    }
+
+    const existedUser = await User.findOne({$or:[{email},{username}]})
+    if(existedUser){
+        throw new ApiError(500,"user with same username or email already existed")
+    }
+
+    const avatarLocalPath = req.files?.avatar[0].path
+
+if(!avatarLocalPath){
+    throw new ApiError(500,"avatar image is required")
+}
+
+const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+if(!avatar){
+    throw new ApiError(500,"Avatar image is required")
+}
+
+console.log(avatar,"avatar")
+
+const user = await User.create({
+    fullName,
+    avatar:avatar.url,
+    email,
+    username:username.toLowerCase(),
+    password,
+})
+
+const createdUser = await User.findById(user._id).select("-password")
+
+if(!createdUser){
+    throw new ApiError(500,"Something went wrong while registering user")
+}
+
+return res.status(201).json(
+    new ApiResponse(200,createdUser,"User created successfully")
+)
+})
+

@@ -1,5 +1,5 @@
 class ApiResponse{
-    constructor(statuscode,message="Api called successfully",data){
+    constructor(statuscode,data,message="Api called successfully"){
         this.statuscode = statuscode
         this.data = data
         this.message = message
