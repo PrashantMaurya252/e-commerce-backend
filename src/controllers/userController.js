@@ -90,9 +90,20 @@ const loginUser = asyncHandler(async(req,res)=>{
     }
 
     return res.status(200).
-    cookies("accessToken",accessToken,options)
-    .json(ApiResponse(200,{
+    cookie("accessToken",accessToken,options)
+    .json(new ApiResponse(200,{
         user:loggedInUser,accessToken
     },"user logged in successfully"))
+})
+
+const logoutUser = asyncHandler(async(req,res)=>{
+    const options ={
+        httpOnly:true,
+        secure:true
+    }
+
+    return res.staus(200).
+    clearCookie("accessToken",options).
+    json(new ApiResponse(200,{},"User Logout successfully"))
 })
 
