@@ -1,8 +1,8 @@
-import { asyncHandler } from "../utils/asyncHandler";
-import { ApiError } from "../utils/ApiError";
-import { ApiResponse } from "../utils/ApiResponse";
-import { User } from "../models/userModel";
-import { uploadOnCloudinary } from "../utils/cloudinary";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { User } from "../models/userModel.js";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const generateAccessToken = async(userId) =>{
     try {
@@ -174,6 +174,8 @@ const changeCurrentPassword = asyncHandler(async(req,res)=>{
 
     return res.status(200).json(new ApiResponse(200,user,"user image updated successfully"))
  })
+
+ 
 
  export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword}
 
