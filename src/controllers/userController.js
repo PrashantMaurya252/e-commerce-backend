@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/userModel.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import passport from "passport";
 
 const generateAccessToken = async(userId) =>{
     try {
@@ -102,7 +103,7 @@ const logoutUser = asyncHandler(async(req,res)=>{
         secure:true
     }
 
-    return res.staus(200).
+    return res.status(200).
     clearCookie("accessToken",options).
     json(new ApiResponse(200,{},"User Logout successfully"))
 })
@@ -175,6 +176,25 @@ const changeCurrentPassword = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,user,"user image updated successfully"))
  })
 
+ export const googleLogin = passport.authenticate('google',{scope:['profile','email']})
+ export const googleCallback = passport.authenticate('google',{failureRedirect:'/'})
+
+ export const dashboard = (req,res) =>{
+    if(req.isAuthenticated()){
+        res.json({
+            message:`Welcome ${req.user.fullName}`,
+            user:req?.user
+        })
+    }else{
+        res.redirect('/')
+    }
+ }
+
+ export const logout = (req, res) => {
+    req.logout(() => {
+        res.json({ message: 'Logged out successfully' });
+    });
+};
  
 
  export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword}

@@ -42,7 +42,7 @@ passport.use(
                     }
                 })
             } catch (error) {
-                throw new ApiError(400,"Something went wrong with google sregister-api")
+                throw new ApiError(400,"Something went wrong with google register-api")
             }
         }
     )
