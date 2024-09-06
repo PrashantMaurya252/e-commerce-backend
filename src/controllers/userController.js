@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/userModel.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import passport from "passport";
+import nodemailer from 'nodemailer'
 
 const generateAccessToken = async(userId) =>{
     try {
@@ -197,5 +198,59 @@ const changeCurrentPassword = asyncHandler(async(req,res)=>{
 };
  
 
- export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword}
+const sendEmail = async(options) =>{
+    const transport = nodemailer.createTransport({
+        service:'Gmail',
+        auth:{
+            user:process.env.EMAIL_USER,
+            pass:process.env.EMAIL_USER_PASSWORD
+        }
+    })
+
+    const mailOptions = {
+        from:process.env.EMAIL_USER,
+        to:options?.email,
+        subject:options?.subject,
+        text:options?.message
+    }
+    await transport.sendMail(mailOptions)
+}
+const forgotPassword = asyncHandler(async(req,res)=>{
+    const {email} = req.body
+    const user = await User.findOne({email})
+
+    if(!user){
+        throw new ApiError(401,"User not found")
+    }
+
+    try {
+        
+
+    const resetToken = crypto.randomBytes(20).toString('hex')
+
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex')
+    user.resetPasswordExpire = Date.now() + 10*60*1000
+
+    await user.save()
+
+    const resetUrl = `${req.protocol}://${req.get('host')}/api/password-reset/${resetToken}`;
+    const message = `You are receiving this email because you (or someone else) has requested a password reset. Please go to the following link to reset your password:\n\n${resetUrl}`;
+
+    await sendEmail({
+        email: user.email,
+        subject: 'Password Reset',
+        message
+      });
+      return res.status(200).json(new ApiResponse(200),{},'Email sent')
+    } catch (error) {
+        user.resetPasswordToken = undefined,
+        user.resetPasswordExpire = undefined
+        await user.save()
+        throw new ApiError(500,'Email could not be sent')
+    }
+    
+
+    
+})
+ export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword,forgotPassword}
 
