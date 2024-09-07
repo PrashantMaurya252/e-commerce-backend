@@ -1,7 +1,7 @@
 import { upload } from "../middleware/multer.js";
 import {Router} from 'express'
 import { verifyJWT } from "../middleware/authMiddleware.js";
-import { changeCurrentPassword, dashboard, getCurrentUser, googleCallback, googleLogin, loginUser, logout, logoutUser, registerUser, updateAccountDetails, updateUserAvatar } from "../controllers/userController.js";
+import { changeCurrentPassword, dashboard, forgotPassword, getCurrentUser, googleCallback, googleLogin, loginUser, logout, logoutUser, registerUser, resetForgottenPassword, updateAccountDetails, updateUserAvatar } from "../controllers/userController.js";
 
 const router = Router()
 
@@ -27,5 +27,8 @@ router.route('/google-login/callback').get(googleCallback)
 
 router.route('/google-logout').get( logout);
 router.route('/dashboard').get(dashboard)
+
+router.route('/forgot-password').post(forgotPassword)
+router.route('/password-reset/:token').put(resetForgottenPassword)
 
 export default router

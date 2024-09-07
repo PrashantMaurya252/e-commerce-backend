@@ -199,13 +199,19 @@ const changeCurrentPassword = asyncHandler(async(req,res)=>{
  
 
 const sendEmail = async(options) =>{
-    const transport = nodemailer.createTransport({
-        service:'Gmail',
-        auth:{
-            user:process.env.EMAIL_USER,
-            pass:process.env.EMAIL_USER_PASSWORD
-        }
-    })
+    try {
+        const transport = nodemailer.createTransport({
+            service:'Gmail',
+            auth:{
+                user:process.env.EMAIL_USER,
+                pass:process.env.EMAIL_USER_PASSWORD
+            }
+        })
+    } catch (error) {
+        console.log("something went wrong with transport")
+        throw new ApiError(500,error.message)
+    }
+   
 
     const mailOptions = {
         from:process.env.EMAIL_USER,
@@ -232,6 +238,7 @@ const forgotPassword = asyncHandler(async(req,res)=>{
     user.resetPasswordExpire = Date.now() + 10*60*1000
 
     await user.save()
+    console.log(req,'req')
 
     const resetUrl = `${req.protocol}://${req.get('host')}/api/password-reset/${resetToken}`;
     const message = `You are receiving this email because you (or someone else) has requested a password reset. Please go to the following link to reset your password:\n\n${resetUrl}`;
@@ -246,11 +253,37 @@ const forgotPassword = asyncHandler(async(req,res)=>{
         user.resetPasswordToken = undefined,
         user.resetPasswordExpire = undefined
         await user.save()
+        console.log(error)
+        console.log(error.message)
         throw new ApiError(500,'Email could not be sent')
     }
     
 
     
 })
- export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword,forgotPassword}
+
+const resetForgottenPassword = asyncHandler(async(req,res)=>{
+    const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex')
+
+    try {
+        const user = await User.findOne({
+            resetPasswordToken,
+            resetPasswordExpire:{$gt:Date.now()}
+        })
+
+        if(!user){
+            throw new ApiError(400,"Invalid or expire token")
+            user.password = req.body.password;
+            user.resetPasswordToken=undefined;
+            user.resetPasswordExpire=undefined;
+
+            await user.save()
+
+            return res.status(200).json(new ApiResponse(200,{},'Password reset successful'))
+        }
+    } catch (error) {
+        throw new ApiError(500,"Error in password reset")
+    }
+})
+ export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword,forgotPassword,resetForgottenPassword}
 
