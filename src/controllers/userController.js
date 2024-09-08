@@ -4,7 +4,10 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/userModel.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import passport from "passport";
-import nodemailer from 'nodemailer'
+import nodemailer from 'nodemailer';
+import jwt from 'jsonwebtoken'
+
+
 
 const generateAccessToken = async(userId) =>{
     try {
@@ -198,29 +201,45 @@ const changeCurrentPassword = asyncHandler(async(req,res)=>{
 };
  
 
-const sendEmail = async(options) =>{
-    try {
-        const transport = nodemailer.createTransport({
-            service:'Gmail',
-            auth:{
-                user:process.env.EMAIL_USER,
-                pass:process.env.EMAIL_USER_PASSWORD
-            }
-        })
-    } catch (error) {
-        console.log("something went wrong with transport")
-        throw new ApiError(500,error.message)
-    }
-   
 
-    const mailOptions = {
-        from:process.env.EMAIL_USER,
-        to:options?.email,
-        subject:options?.subject,
-        text:options?.message
+
+// Configure Nodemailer transporter using Gmail
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    secure:true,
+    port:465,
+    auth: {
+        user: process.env.MAIL_APP_GMAIL, // Your Gmail address
+        pass: process.env.MAIL_APP_PASSWORD, // Your Gmail password or App password if 2FA is enabled
+    },
+});
+
+// Function to send OTP email
+
+const sendEmailNodemailer = async (toEmail, otp) => {
+    try {
+        const mailOptions = {
+            from: 'mauryaprashant202@gmail.com', // Your email address
+            to: toEmail, // Recipient email address
+            subject: 'Your Password Reset OTP',
+            text: `Your OTP is ${otp}. This code is valid for 10 minutes.`,
+            html: `<h1>Password Reset Request</h1><p>Your OTP is <strong>${otp}</strong>.</p><p>This code is valid for 10 minutes.</p>`,
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        
+        return info;
+    } catch (error) {
+        console.error('Nodemailer error:', error.message);
+        throw new ApiError(500, 'Failed to send email via Nodemailer');
     }
-    await transport.sendMail(mailOptions)
-}
+};
+
+
+
+
+
+
 const forgotPassword = asyncHandler(async(req,res)=>{
     const {email} = req.body
     const user = await User.findOne({email})
@@ -232,29 +251,27 @@ const forgotPassword = asyncHandler(async(req,res)=>{
     try {
         
 
-    const resetToken = crypto.randomBytes(20).toString('hex')
+    const resetOTP = Math.round(Math.random()*10000)
 
-    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex')
+    user.resetPasswordOTP =resetOTP
     user.resetPasswordExpire = Date.now() + 10*60*1000
 
-    await user.save()
-    console.log(req,'req')
+    await user.save({validateBeforeSave:false})
 
-    const resetUrl = `${req.protocol}://${req.get('host')}/api/password-reset/${resetToken}`;
-    const message = `You are receiving this email because you (or someone else) has requested a password reset. Please go to the following link to reset your password:\n\n${resetUrl}`;
+    
+    // await sendEmailMailjet(email) 
+    await sendEmailNodemailer(email,resetOTP)
+    
 
-    await sendEmail({
-        email: user.email,
-        subject: 'Password Reset',
-        message
-      });
+      
       return res.status(200).json(new ApiResponse(200),{},'Email sent')
     } catch (error) {
-        user.resetPasswordToken = undefined,
-        user.resetPasswordExpire = undefined
-        await user.save()
-        console.log(error)
-        console.log(error.message)
+        console.log(error,"error")
+         user.resetPasswordOTP = undefined,
+         user.resetPasswordExpire = undefined
+        await user.save({validateBeforeSave:false})
+       
+        console.log("catch block error",error)
         throw new ApiError(500,'Email could not be sent')
     }
     
@@ -262,28 +279,52 @@ const forgotPassword = asyncHandler(async(req,res)=>{
     
 })
 
-const resetForgottenPassword = asyncHandler(async(req,res)=>{
-    const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex')
+const passwordOTPverification = asyncHandler(async(req,res)=>{
+    const {OTP} = req.body
+
+    
 
     try {
-        const user = await User.findOne({
-            resetPasswordToken,
-            resetPasswordExpire:{$gt:Date.now()}
-        })
+        const user = await User.findOne({resetPasswordOTP:OTP})
 
         if(!user){
-            throw new ApiError(400,"Invalid or expire token")
-            user.password = req.body.password;
-            user.resetPasswordToken=undefined;
-            user.resetPasswordExpire=undefined;
-
-            await user.save()
-
-            return res.status(200).json(new ApiResponse(200,{},'Password reset successful'))
+            throw new ApiError(400,"Invalid or expire OTP")
         }
+
+        user.resetPasswordOTP = undefined
+        user.resetPasswordExpire = undefined
+        await user.save({validateBeforeSave:false})
+
+        const token = jwt.sign({userId:user._id},process.env.RESET_PASSWORD_SECRET,{expiresIn:'10m'})
+
+        return res.status(200).json(new ApiResponse(200,token,'OTP verified successfully'))
     } catch (error) {
         throw new ApiError(500,"Error in password reset")
     }
 })
- export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword,forgotPassword,resetForgottenPassword}
+
+const resetPassword =asyncHandler(async(req,res)=>{
+    const {token,newPassword} = req.body
+
+    try {
+        const decode = jwt.verify(token,process.env.RESET_PASSWORD_SECRET)
+        if(!decode){
+            throw new ApiError(500,"unauthorized request")
+        }
+
+        const user = await User.findById(decode.userId)
+
+        if(!user){
+            throw new ApiError(500,"User does no exist for provided token")
+        }
+
+        user.password = newPassword
+        await user.save({validateBeforeSave:false})
+
+        return res.status(200).json(new ApiResponse(200,{},"Password Updated successfully"))
+    } catch (error) {
+        
+    }
+})
+ export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword,forgotPassword,passwordOTPverification,resetPassword}
 

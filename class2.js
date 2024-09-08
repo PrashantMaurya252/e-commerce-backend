@@ -21,3 +21,5 @@ class student extends person {
 }
 let student1 = new student('Mukul', 22);
 console.log(student1.toString());
+
+console.log(Math.round(Math.random()*10000))
