@@ -78,4 +78,30 @@ const markFavourite = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,user.favourites,"Product mark as favourite"))
 })
 
-export {addProduct,markFavourite}
+const markUnFavourite = asyncHandler(async(req,res)=>{
+    const productId = req.params.productId
+    const userId = req.user
+
+    const product = await Product.findById(productId)
+    if(!product){
+        throw new ApiError(404,"Product does not exist")
+    }
+
+    const user = await User.findById(userId)
+    if(!user){
+        throw new ApiError(404,"User does not exist")
+    }
+     const isFavourite = await user.favourites.some(fav => fav.item.toString() === productId)
+
+     if(!isFavourite){
+        throw new ApiError(400,"This product is not marked favourite")
+     }
+
+     user.favourites = user.favourites.filter(filter =>filter.item.toString() !== productId )
+
+     await user.save({validateBeforeSave:false})
+
+     return res.status(200).json(new ApiResponse(200,user.favourites,"product unmarked successfully"))
+})
+
+export {addProduct,markFavourite,markUnFavourite}
