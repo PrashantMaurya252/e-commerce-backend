@@ -1,4 +1,5 @@
 import { Product } from "../models/productModel.js";
+import { User } from "../models/userModel.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -15,7 +16,7 @@ const addProduct = asyncHandler(async(req,res)=>{
 
     const productImageLocalPath = req.file?.path
 
-    console.log(productImageLocalPath,"product Image Local Path")
+    
 
     if(!productImageLocalPath){
         throw new ApiError(500,"product Image not found")
@@ -23,7 +24,7 @@ const addProduct = asyncHandler(async(req,res)=>{
 
     const productImage = await uploadOnCloudinary(productImageLocalPath)
 
-    console.log(productImage,"productImage")
+    
 
     if(!productImage){
         throw new ApiError(400,"There is an error while product image uploading on cloudinary")
@@ -48,4 +49,33 @@ const addProduct = asyncHandler(async(req,res)=>{
     )
 })
 
-export {addProduct}
+const markFavourite = asyncHandler(async(req,res)=>{
+    const userId = req.user
+
+    const productId = req.params.productId
+
+    const product = await Product.findById(productId)
+    if(!product){
+        throw new ApiError(500,"Product does not exist")
+    }
+
+    const user = await User.findById(userId)
+    if(!user){
+        throw new ApiError(400,"User does not exist")
+    }
+    const isFavourite = await user.favourites.some(fav => fav.item.toString() === productId)
+    if(isFavourite){
+        throw new ApiError(400,"This Product already mark favourite")
+    }
+
+    user.favourites.push({
+        item:productId,
+        addedAt:Date.now()
+    })
+
+    await user.save({validateBeforeSave:false})
+
+    return res.status(200).json(new ApiResponse(200,user.favourites,"Product mark as favourite"))
+})
+
+export {addProduct,markFavourite}

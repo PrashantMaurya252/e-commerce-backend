@@ -323,7 +323,7 @@ const resetPassword =asyncHandler(async(req,res)=>{
 
         return res.status(200).json(new ApiResponse(200,{},"Password Updated successfully"))
     } catch (error) {
-        
+        throw new ApiError(400,"Password reset unsuccessful")
     }
 })
  export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword,forgotPassword,passwordOTPverification,resetPassword}
