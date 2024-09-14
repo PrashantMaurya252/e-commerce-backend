@@ -1,8 +1,8 @@
 import { Product } from "../models/productModel.js";
 import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 
 
@@ -13,7 +13,9 @@ const addProduct = asyncHandler(async(req,res)=>{
         throw new ApiError(500,"All Fields are required")
     }
 
-    const productImageLocalPath = req.files?.productImage[0].path
+    const productImageLocalPath = req.file?.path
+
+    console.log(productImageLocalPath,"product Image Local Path")
 
     if(!productImageLocalPath){
         throw new ApiError(500,"product Image not found")
@@ -21,16 +23,18 @@ const addProduct = asyncHandler(async(req,res)=>{
 
     const productImage = await uploadOnCloudinary(productImageLocalPath)
 
+    console.log(productImage,"productImage")
+
     if(!productImage){
         throw new ApiError(400,"There is an error while product image uploading on cloudinary")
     }
 
     const product = await Product.create({
-        productName,
-        productCategory,
-        productImage:productImage.url,
-        productDescription,
-        productPrice
+        name:productName,
+        category:productCategory,
+        image:productImage.url,
+        description:productDescription,
+        price:productPrice
     })
 
     const createdProduct = await Product.findById(product._id)
@@ -43,3 +47,5 @@ const addProduct = asyncHandler(async(req,res)=>{
         new ApiResponse(200,createdProduct,"product added")
     )
 })
+
+export {addProduct}
