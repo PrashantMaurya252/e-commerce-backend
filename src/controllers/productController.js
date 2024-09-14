@@ -23,13 +23,9 @@ const addProduct = asyncHandler(async(req,res)=>{
     }
 
     const productImage = await uploadOnCloudinary(productImageLocalPath)
-
-    
-
     if(!productImage){
         throw new ApiError(400,"There is an error while product image uploading on cloudinary")
     }
-
     const product = await Product.create({
         name:productName,
         category:productCategory,
@@ -104,4 +100,25 @@ const markUnFavourite = asyncHandler(async(req,res)=>{
      return res.status(200).json(new ApiResponse(200,user.favourites,"product unmarked successfully"))
 })
 
-export {addProduct,markFavourite,markUnFavourite}
+const getFavouriteProducts = asyncHandler(async(req,res)=>{
+    const userId = req.user._id
+
+    const user = await User.findById(userId).populate(
+        {
+            path:'favourites.item',
+            model:'Product',
+            select:'name category image description price'
+        }
+    )
+
+    if(!user){
+        throw new ApiError(404,"User not found")
+    }
+
+    const favouriteProducts = await user.favourites.map(fav => fav.item)
+    
+
+    return res.status(200).json(new ApiResponse(200,favouriteProducts,"Favourite products request successful"))
+})
+
+export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts}
