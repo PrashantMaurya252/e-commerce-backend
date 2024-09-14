@@ -121,4 +121,27 @@ const getFavouriteProducts = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,favouriteProducts,"Favourite products request successful"))
 })
 
-export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts}
+const getAllProduct = asyncHandler(async(req,res)=>{
+    const userId = req?.user._id
+
+    const user = await User.findById(userId).select('favourites')
+
+    if(!user){
+        throw new ApiError(404,"User not found")
+    }
+
+    const products = await Product.find()
+
+    const favouriteProductIds =user.favourites.map(fav => fav.item.toString())
+
+    const productWithFavourite = products.map((product)=>{
+        return {
+            ...product.toObject(),
+            isFavourite:favouriteProductIds.includes(product._id.toString())
+        }
+    })
+
+    return res.status(200).json(new ApiResponse(200,productWithFavourite,"All Products are here"))
+})
+
+export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct}
