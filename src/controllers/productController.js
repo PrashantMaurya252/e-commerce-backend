@@ -126,22 +126,65 @@ const getAllProduct = asyncHandler(async(req,res)=>{
 
     const user = await User.findById(userId).select('favourites')
 
+    // Adding Pagination
+
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 10
+
+    const price = req.query.price ? parseInt(req.query.price) : undefined
+    const name = req.query.name ? req.query.name : undefined
+
+    const filter ={}
+
+    if(price){
+        filter.price = price
+    }
+
+    if(name){
+        filter.name = new RegExp(name,'i')
+    }
+
+    const aggregateQuery = Product.aggregate([
+        {$match:filter},
+        {$sort:{createdAt:-1}}
+    ])
+
+    
+
+    const options = {
+        page,
+        limit,
+        customLabels:{
+            totalDocs:'totalItems',
+            docs:'products'
+        }
+    }
+
+
+
+    console.log(options,"options")
     if(!user){
         throw new ApiError(404,"User not found")
     }
 
-    const products = await Product.find()
+    const products = await Product.aggregatePaginate(aggregateQuery,options)
+
+    
 
     const favouriteProductIds =user.favourites.map(fav => fav.item.toString())
 
-    const productWithFavourite = products.map((product)=>{
+    
+
+     products.products= products.products.map((product)=>{
         return {
-            ...product.toObject(),
+            ...product,
             isFavourite:favouriteProductIds.includes(product._id.toString())
         }
     })
 
-    return res.status(200).json(new ApiResponse(200,productWithFavourite,"All Products are here"))
+    
+
+    return res.status(200).json(new ApiResponse(200,products,"All Products are here"))
 })
 
 export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct}
