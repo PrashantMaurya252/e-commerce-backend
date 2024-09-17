@@ -46,7 +46,7 @@ const addProduct = asyncHandler(async(req,res)=>{
 })
 
 const markFavourite = asyncHandler(async(req,res)=>{
-    const userId = req.user
+    const userId = req.user._id
 
     const productId = req.params.productId
 
@@ -76,7 +76,7 @@ const markFavourite = asyncHandler(async(req,res)=>{
 
 const markUnFavourite = asyncHandler(async(req,res)=>{
     const productId = req.params.productId
-    const userId = req.user
+    const userId = req.user._id
 
     const product = await Product.findById(productId)
     if(!product){
@@ -162,7 +162,7 @@ const getAllProduct = asyncHandler(async(req,res)=>{
 
 
 
-    console.log(options,"options")
+    
     if(!user){
         throw new ApiError(404,"User not found")
     }
@@ -187,4 +187,41 @@ const getAllProduct = asyncHandler(async(req,res)=>{
     return res.status(200).json(new ApiResponse(200,products,"All Products are here"))
 })
 
-export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct}
+const addedToCart = asyncHandler(async(req,res)=>{
+    
+    const userId = req?.user._id
+
+    const {productId,quantity} = req.body
+
+    const product = await Product.findById(productId)
+
+    if(!product){
+        throw new ApiError(404,"this product is not available")
+    }
+
+    const user = await User.findById(userId)
+
+    console.log(user,"user")
+
+    if(!user){
+        throw new ApiError(404,"User does not exist")
+    }
+
+    const productInCart = await user.cart.find(cartItem => cartItem.item.toString() === productId)
+
+    if(productInCart){
+        productInCart += quantity || 1
+    }else{
+        user.cart.push({
+            item:productId,
+            quantity:quantity || 1
+        })
+    }
+
+    await user.save({validateBeforeSave:false})
+
+    return res.status(200).json(new ApiResponse(200,user.save,"item added to cart"))
+
+})
+
+export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct,addedToCart}
