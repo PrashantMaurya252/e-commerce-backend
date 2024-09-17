@@ -208,9 +208,10 @@ const addedToCart = asyncHandler(async(req,res)=>{
     }
 
     const productInCart = await user.cart.find(cartItem => cartItem.item.toString() === productId)
+    console.log(productInCart,"productInCart")
 
     if(productInCart){
-        productInCart += quantity || 1
+        productInCart.quantity += quantity || 1
     }else{
         user.cart.push({
             item:productId,
@@ -220,8 +221,53 @@ const addedToCart = asyncHandler(async(req,res)=>{
 
     await user.save({validateBeforeSave:false})
 
-    return res.status(200).json(new ApiResponse(200,user.save,"item added to cart"))
+    return res.status(200).json(new ApiResponse(200,user.cart,"item added to cart"))
 
 })
 
-export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct,addedToCart}
+const removeFromCart = asyncHandler(async(req,res)=>{
+    
+    const userId = req?.user._id
+
+    const {productId,quantity,removeAll} = req.body
+
+    const product = await Product.findById(productId)
+
+    if(!product){
+        throw new ApiError(404,"this product is not available")
+    }
+
+    const user = await User.findById(userId)
+
+    console.log(user,"user")
+
+    if(!user){
+        throw new ApiError(404,"User does not exist")
+    }
+
+    const productInCart = await user.cart.find(cartItem => cartItem.item.toString() === productId)
+
+    if(!productInCart){
+        throw new ApiError(404,"Product not found")
+    }
+
+    if(removeAll || productInCart.quantity <= quantity || quantity === 0){
+       user.cart = user.cart.filter(filter => filter.item.toString() !== productId)
+
+    }
+    
+    else{
+        productInCart.quantity -= quantity || 1
+
+        if(productInCart.quantity <=0){
+            user.cart = user.cart.filter(filter =>filter.item.toString() !==productId)
+        }
+    }
+
+    await user.save({validateBeforeSave:false})
+
+    return res.status(200).json(new ApiResponse(200,user.cart,"item removed to cart"))
+
+})
+
+export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct,addedToCart,removeFromCart}
