@@ -274,7 +274,10 @@ const searchName =asyncHandler(async(req,res)=>{
      const {searchTerm} = req.query
 
      try {
-        const searchQuery = {name:{$regex:searchTerm,$options:'i'}}
+        const searchQuery = {$or:[
+            {name:{$regex:searchTerm,$options:'i'}},{category:{$regex:searchTerm,$options:'i'}}
+        ]}
+        
 
         const product = await Product.find(searchQuery)
 
