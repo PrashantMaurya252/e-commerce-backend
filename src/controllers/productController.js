@@ -270,4 +270,19 @@ const removeFromCart = asyncHandler(async(req,res)=>{
 
 })
 
-export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct,addedToCart,removeFromCart}
+const searchName =asyncHandler(async(req,res)=>{
+     const {searchTerm} = req.query
+
+     try {
+        const searchQuery = {name:{$regex:searchTerm,$options:'i'}}
+
+        const product = await Product.find(searchQuery)
+
+
+        res.status(200).json(new ApiResponse(200,product,"Search api called successfully"))
+     } catch (error) {
+        throw new ApiError(404,"error in calling search api")
+     }
+})
+
+export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct,addedToCart,removeFromCart,searchName}
