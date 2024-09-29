@@ -1,3 +1,4 @@
+import Stripe from "stripe";
 import { Product } from "../models/productModel.js";
 import { User } from "../models/userModel.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -288,4 +289,36 @@ const searchName =asyncHandler(async(req,res)=>{
      }
 })
 
-export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct,addedToCart,removeFromCart,searchName}
+const stripePayment = asyncHandler(async(req,res)=>{
+    const {items} = req.body
+    console.log(items,"items")
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+    
+    try {
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types:['card'],
+            line_items:items.map(item=>({
+                price_data:{
+                    currency:'inr',
+                    product_data:{
+                        name:item.name
+                    },
+                    unit_amount:item.price*100,
+                },
+                quantity:item.quantity
+            })),
+            mode:'payment',
+            success_url:'http://localhost:3000/success',
+            cancel_url:'http://localhost:3000/cancel'
+        })
+        console.log(session,"stripe session")
+        res.json({id:session.id})
+
+        
+    } catch (error) {
+        console.log(error.message,"stripe error")
+        throw new ApiError(500,"Something went wrong with payment api")
+    }
+})
+
+export {addProduct,markFavourite,markUnFavourite,getFavouriteProducts,getAllProduct,addedToCart,removeFromCart,searchName,stripePayment}

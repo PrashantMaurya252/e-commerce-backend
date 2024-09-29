@@ -3,6 +3,7 @@ import {Router} from 'express'
 import { verifyJWT } from "../middleware/authMiddleware.js";
 import { changeCurrentPassword, dashboard, forgotPassword, getCurrentUser, googleCallback, googleLogin, loginUser, logout, logoutUser, passwordOTPverification, registerUser, resetPassword, updateAccountDetails, updateUserAvatar } from "../controllers/userController.js";
 import verifyAdmin from "../middleware/adminMiddleware.js";
+import { stripePayment } from "../controllers/productController.js";
 
 const router = Router()
 
@@ -32,6 +33,7 @@ router.route('/dashboard').get(dashboard)
 router.route('/forgot-password').post(forgotPassword)
 router.route('/password-otp-verification').post(passwordOTPverification)
 router.route('/reset-password').post(resetPassword)
+
 
 
 
