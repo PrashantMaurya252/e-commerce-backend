@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addedToCart, addProduct, getAllProduct, getFavouriteProducts, markFavourite, markUnFavourite, removeFromCart, searchName, stripePayment } from "../controllers/productController.js";
+import { addedToCart, addProduct, getAllProduct, getFavouriteProducts, markFavourite, markUnFavourite, paymentStatus, removeFromCart, searchName, stripePayment } from "../controllers/productController.js";
 import verifyAdmin from "../middleware/adminMiddleware.js";
 import { verifyJWT } from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/multer.js";
@@ -14,6 +14,7 @@ router.route('/addedToCart').post(verifyJWT,addedToCart)
 router.route('/removeFromCart').post(verifyJWT,removeFromCart)
 router.route('/name-search').get(searchName)
 router.route('/create-payment-intent').post(stripePayment)
+router.route('/update-payment-status').post(paymentStatus)
 
 
 

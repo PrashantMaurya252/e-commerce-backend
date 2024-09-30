@@ -254,7 +254,6 @@ const removeFromCart = asyncHandler(async (req, res) => {
 
   const user = await User.findById(userId);
 
-
   if (!user) {
     throw new ApiError(404, "User does not exist");
   }
@@ -310,28 +309,48 @@ const searchName = asyncHandler(async (req, res) => {
 });
 
 const stripePayment = asyncHandler(async (req, res) => {
-    const {products,amount,userId} = req.body
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+  const { products, amount, userId } = req.body;
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-    try {
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount:amount,
-            currency:'inr',
-            metaData:{userId,products:JSON.stringify(products)}
-        })
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: "inr",
+      metaData: { userId, products: JSON.stringify(products) },
+    });
 
-        const payment = new Payment({
-            userId,
-            products,
-            amount,
-            paymentIntentId:paymentIntent.id,
-            status:'pending'
-        })
-        await payment.save({validateBeforeSave:false})
-        return res.status(200).json(200,{clientSecret:paymentIntent.client_secret})
-    } catch (error) {
-        throw new ApiError(500,"Something went wrong with payment request")
+    const payment = new Payment({
+      userId,
+      products,
+      amount,
+      paymentIntentId: paymentIntent.id,
+      status: "pending",
+    });
+    await payment.save({ validateBeforeSave: false });
+    return res
+      .status(200)
+      .json(200, { clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    throw new ApiError(500, "Something went wrong with payment request");
+  }
+});
+
+const paymentStatus = asyncHandler(async (req, res) => {
+  const { paymentIntentId, status } = req.body;
+
+  try {
+    const payment = await Payment.findOne({paymentIntentId})
+
+    if(payment){
+      payment.status = status
+      await payment.save({validateBeforeSave:false})
+      res.status(200).json(new ApiResponse(200,{},"payment status updated successfully"))
+    }else{
+      throw new ApiError(404,"some error happend during payment status update")
     }
+  } catch (error) {
+    throw new ApiError(400,"Some error happend in payment-status api")
+  }
 });
 
 export {
@@ -344,4 +363,5 @@ export {
   removeFromCart,
   searchName,
   stripePayment,
+  paymentStatus
 };
