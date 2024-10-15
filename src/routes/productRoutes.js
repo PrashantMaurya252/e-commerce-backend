@@ -13,8 +13,8 @@ router.route('/all-products').get(verifyJWT,getAllProduct)
 router.route('/addedToCart').post(verifyJWT,addedToCart)
 router.route('/removeFromCart').post(verifyJWT,removeFromCart)
 router.route('/name-search').get(searchName)
-router.route('/create-payment-intent').post(stripePayment)
-router.route('/update-payment-status').post(paymentStatus)
+router.route('/create-payment-intent').post(verifyJWT,stripePayment)
+router.route('/update-payment-status').post(verifyJWT,paymentStatus)
 
 
 

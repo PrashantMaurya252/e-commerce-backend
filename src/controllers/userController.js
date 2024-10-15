@@ -22,8 +22,8 @@ const generateAccessToken = async(userId) =>{
 }
 
 const registerUser = asyncHandler(async(req,res)=>{
-    const {username,fullName,email,password} = req.body
-    if([fullName,username,email,password].some((field)=>field.trim() === "")){
+    const {username,fullname,email,password,phone,address} = req.body
+    if([fullname,username,email,password].some((field)=>field.trim() === "")){
         throw new ApiError(409,"All fields are required")
     }
 
@@ -34,24 +34,27 @@ const registerUser = asyncHandler(async(req,res)=>{
 
     const avatarLocalPath = req.files?.avatar[0].path
 
-if(!avatarLocalPath){
-    throw new ApiError(500,"avatar image is required")
-}
+// if(!avatarLocalPath){
+//     throw new ApiError(500,"avatar image is required")
+// }
 
-const avatar = await uploadOnCloudinary(avatarLocalPath)
+// const avatar = await uploadOnCloudinary(avatarLocalPath)
 
-if(!avatar){
-    throw new ApiError(500,"Avatar image is required")
-}
+// if(!avatar){
+//     throw new ApiError(500,"Avatar image is required")
+// }
 
-console.log(avatar,"avatar")
+
 
 const user = await User.create({
-    fullName,
-    avatar:avatar.url,
+    fullName:fullname,
+    // avatar:avatar.url,
     email,
     username:username.toLowerCase(),
     password,
+    phoneNumber:phone,
+    address
+    
 })
 
 const createdUser = await User.findById(user._id).select("-password")
@@ -91,7 +94,8 @@ const loginUser = asyncHandler(async(req,res)=>{
 
     const options ={
         httpOnly:true,
-        secure:true
+        secure:true,
+        sameSite:true
     }
 
     return res.status(200).
@@ -102,6 +106,7 @@ const loginUser = asyncHandler(async(req,res)=>{
 })
 
 const logoutUser = asyncHandler(async(req,res)=>{
+    
     const options ={
         httpOnly:true,
         secure:true

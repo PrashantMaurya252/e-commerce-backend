@@ -145,10 +145,6 @@ const getFavouriteProducts = asyncHandler(async (req, res) => {
 });
 
 const getAllProduct = asyncHandler(async (req, res) => {
-  const userId = req?.user._id;
-
-  const user = await User.findById(userId).select("favourites");
-
   // Adding Pagination
 
   const page = parseInt(req.query.page) || 1;
@@ -156,6 +152,20 @@ const getAllProduct = asyncHandler(async (req, res) => {
 
   const price = req.query.price ? parseInt(req.query.price) : undefined;
   const name = req.query.name ? req.query.name : undefined;
+
+  const user = req?.user;
+  let favouriteProductId = [];
+
+  if (user) {
+    const userWithFavouritesProducts = await User.findById(user._id).select(
+      "favourites"
+    );
+    favouriteProductId = userWithFavouritesProducts
+      ? userWithFavouritesProducts?.favourites
+      : [];
+  }
+
+  console.log(favouriteProductId,"favouriteProductId")
 
   const filter = {};
 
@@ -181,24 +191,30 @@ const getAllProduct = asyncHandler(async (req, res) => {
     },
   };
 
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
   const products = await Product.aggregatePaginate(aggregateQuery, options);
 
-  const favouriteProductIds = user.favourites.map((fav) => fav.item.toString());
-
-  products.products = products.products.map((product) => {
-    return {
-      ...product,
-      isFavourite: favouriteProductIds.includes(product._id.toString()),
-    };
+  const updateProduct = products?.products.map((item) => {
+    if (user) {
+      return {
+        ...item,
+        isfavourite: favouriteProductId.includes(item?._id.toString()),
+      };
+    } else {
+      return {
+        ...item,
+      };
+    }
   });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, products, "All Products are here"));
+    .json(
+      new ApiResponse(
+        200,
+        { ...products, products: updateProduct },
+        "All Products are here"
+      )
+    );
 });
 
 const addedToCart = asyncHandler(async (req, res) => {
@@ -214,8 +230,6 @@ const addedToCart = asyncHandler(async (req, res) => {
 
   const user = await User.findById(userId);
 
-  console.log(user, "user");
-
   if (!user) {
     throw new ApiError(404, "User does not exist");
   }
@@ -223,7 +237,6 @@ const addedToCart = asyncHandler(async (req, res) => {
   const productInCart = await user.cart.find(
     (cartItem) => cartItem.item.toString() === productId
   );
-  console.log(productInCart, "productInCart");
 
   if (productInCart) {
     productInCart.quantity += quantity || 1;
@@ -287,6 +300,10 @@ const removeFromCart = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user.cart, "item removed to cart"));
 });
 
+// const cartItems = asyncHandler(async(req,res)=>{
+//   const {userId} = req.user
+// })
+
 const searchName = asyncHandler(async (req, res) => {
   const { searchTerm } = req.query;
 
@@ -339,17 +356,22 @@ const paymentStatus = asyncHandler(async (req, res) => {
   const { paymentIntentId, status } = req.body;
 
   try {
-    const payment = await Payment.findOne({paymentIntentId})
+    const payment = await Payment.findOne({ paymentIntentId });
 
-    if(payment){
-      payment.status = status
-      await payment.save({validateBeforeSave:false})
-      res.status(200).json(new ApiResponse(200,{},"payment status updated successfully"))
-    }else{
-      throw new ApiError(404,"some error happend during payment status update")
+    if (payment) {
+      payment.status = status;
+      await payment.save({ validateBeforeSave: false });
+      res
+        .status(200)
+        .json(new ApiResponse(200, {}, "payment status updated successfully"));
+    } else {
+      throw new ApiError(
+        404,
+        "some error happend during payment status update"
+      );
     }
   } catch (error) {
-    throw new ApiError(400,"Some error happend in payment-status api")
+    throw new ApiError(400, "Some error happend in payment-status api");
   }
 });
 
@@ -363,5 +385,5 @@ export {
   removeFromCart,
   searchName,
   stripePayment,
-  paymentStatus
+  paymentStatus,
 };

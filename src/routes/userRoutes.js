@@ -19,7 +19,7 @@ router.route('/register').post(
 
 router.route('/login').post(loginUser)
 
-router.route('/logout').post(verifyJWT,logoutUser)
+router.route('/logout').post(logoutUser)
 router.route('/update-user').patch(verifyJWT,updateAccountDetails)
 router.route('/change-password').post(verifyJWT,changeCurrentPassword)
 router.route('/update-user-avatar').patch(verifyJWT,upload.single("avatar"),updateUserAvatar)
