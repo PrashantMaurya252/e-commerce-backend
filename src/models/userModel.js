@@ -57,8 +57,10 @@ const userSchema = new mongoose.Schema({
     },
     resetPasswordOTP: Number,
     resetPasswordExpire: Date,
-    verificationOTP:Number,
-    verifyOTP:Date,
+    phoneVerificationOTP:Number,
+    phoneVerificationOTPExpire:Date,
+    emailVerificationOTP:Number,
+    emailVerifyOTPExpire:Date,
     favourites:[
         {
             item:{
@@ -118,6 +120,21 @@ userSchema.methods.generateAccessToken =  function(){
         process.env.ACCESS_TOKEN_SECRET,
         {expiresIn:process.env.ACCESS_TOKEN_EXPIRY}
     )
+}
+
+userSchema.methods.sendingEmailVerificationOTP=async function(nodeMailerTransporter){
+    const otp = Math.floor(100000 + Math.random()*900000)
+    this.emailVerificationOTP = otp
+    this.emailVerificationOTP = Date.now() +180000
+
+    const mailOption = {
+        from:process.env.MAIL_APP_GMAIL,
+        to:this.email,
+        subject:"Email Verification OTP",
+        message:`Your OTP for email verification is ${otp} an this will expire in 3 minutes`
+    }
+
+    await nodeMailerTransporter.sendMail(mailOption)
 }
 
 
