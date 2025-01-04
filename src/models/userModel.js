@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt'
 const userSchema = new mongoose.Schema({
     username:{
         type:String,
-        required:true,
+        required:false,
         unique:true,
         lowercase:true,
         index:true,
@@ -18,25 +18,29 @@ const userSchema = new mongoose.Schema({
         lowercase:true,
         trim:true
     },
+    isVerified:{
+        type:Boolean,
+        default:false
+    },
     fullName:{
         type:String,
-        required:true,
+        required:false,
         trim:true,
         index:true
     },
     phoneNumber:{
         type:Number,
-        required:true,
+        required:false,
         
     },
     address:{
         type:String,
-        required:true,
+        required:false,
         
     },
     avatar:{
         type:String,
-        default:'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8YXZhdGFyfGVufDB8fDB8fHww'
+        default:'N/A'
     },
     password:{
         type:String,
@@ -53,6 +57,8 @@ const userSchema = new mongoose.Schema({
     },
     resetPasswordOTP: Number,
     resetPasswordExpire: Date,
+    verificationOTP:Number,
+    verifyOTP:Date,
     favourites:[
         {
             item:{

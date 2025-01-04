@@ -230,20 +230,13 @@ const sendEmailNodemailer = async (toEmail, otp) => {
             text: `Your OTP is ${otp}. This code is valid for 10 minutes.`,
             html: `<h1>Password Reset Request</h1><p>Your OTP is <strong>${otp}</strong>.</p><p>This code is valid for 10 minutes.</p>`,
         };
-
-        const info = await transporter.sendMail(mailOptions);
-        
+        const info = await transporter.sendMail(mailOptions);        
         return info;
     } catch (error) {
         console.error('Nodemailer error:', error.message);
         throw new ApiError(500, 'Failed to send email via Nodemailer');
     }
 };
-
-
-
-
-
 
 const forgotPassword = asyncHandler(async(req,res)=>{
     const {email} = req.body
@@ -279,9 +272,7 @@ const forgotPassword = asyncHandler(async(req,res)=>{
         console.log("catch block error",error)
         throw new ApiError(500,'Email could not be sent')
     }
-    
-
-    
+       
 })
 
 const passwordOTPverification = asyncHandler(async(req,res)=>{
