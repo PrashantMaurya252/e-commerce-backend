@@ -1,6 +1,8 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
+import { Twilio } from "twilio";
+
 
 const userSchema = new mongoose.Schema({
     username:{
@@ -125,7 +127,7 @@ userSchema.methods.generateAccessToken =  function(){
 userSchema.methods.sendingEmailVerificationOTP=async function(nodeMailerTransporter){
     const otp = Math.floor(100000 + Math.random()*900000)
     this.emailVerificationOTP = otp
-    this.emailVerificationOTP = Date.now() +180000
+    this.emailVerifyOTPExpire = Date.now() +180000
 
     const mailOption = {
         from:process.env.MAIL_APP_GMAIL,
@@ -135,6 +137,41 @@ userSchema.methods.sendingEmailVerificationOTP=async function(nodeMailerTranspor
     }
 
     await nodeMailerTransporter.sendMail(mailOption)
+}
+
+userSchema.methods.verifyEmailOTP = async function(otp){
+    if(this.emailVerificationOTP === otp && Date.now() < this.emailVerifyOTPExpire){
+        this.emailVerificationOTP = null
+        this.emailVerifyOTPExpire = null
+        return true
+    }
+    return false
+}
+
+userSchema.methods.sendingPhoneVerificationOTP = async function(){
+    const otp = Math.floor(100000 + Math.random()*9000000)
+    this.phoneVerificationOTP = otp
+    this.phoneVerificationOTPExpire = Date.now() + 180000
+
+    const twilioClient = Twilio(
+        process.env.TWILIO_SID,
+        process.env.TWILIO_AUTH_TOKEN
+    )
+
+    await twilioClient.messages.create({
+        body:`Your OTP for phone verification is ${otp}. It will expires in 3 minutes.`,
+        from:process.env.TWILIO_PHONE_NUMBER,
+        to:this.phoneNumber
+    })
+}
+
+userSchema.methods.verifyPhoneOTP = async function(otp){
+    if(this.phoneVerificationOTP === otp && Date.now() < phoneVerificationOTPExpire){
+        this.phoneVerificationOTP = null
+        this.phoneVerificationOTPExpire = null
+        return true
+    }
+    return false
 }
 
 
