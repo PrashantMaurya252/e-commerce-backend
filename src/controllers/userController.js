@@ -322,5 +322,75 @@ const resetPassword =asyncHandler(async(req,res)=>{
         throw new ApiError(400,"Password reset unsuccessful")
     }
 })
- export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword,forgotPassword,passwordOTPverification,resetPassword}
+
+const sendEmailVerificationOTP = asyncHandler(async(req,res)=>{
+    try {
+        const {email} = req.body
+    const authuser = req.user
+    const userId = authuser._id
+    const user = await User.find({email})
+    if(!user){
+        return res.status(404).json({status:false,message:"User Not Found."})
+    }
+
+    await user.sendEmailVerificationOTP(transporter)
+    await user.save()
+    return res.status(200).json({messsage:"Email OTP send successfully"})
+    } catch (error) {
+        console.log(error,"failed to send otp")
+        res.status(500).json({status:false,message:"Failed To send OTP",error})
+    }
+
+})
+
+const verifyEmailOTP = async(req,res)=>{
+    try {
+        const {email,otp} = req.body
+        const user = await User.find({email})
+        if(!user){
+            return res.status(404).json({status:false,message:"User Not Found"})
+        }
+
+        const isVerified = await user.verifyEmailOTP(parseInt(otp,10))
+        if(!isVerified){
+            return res.status(400).json({status:false,message:"Invalid or Expired OTP"})
+        }
+        await user.save()
+        return res.status(200).json({status:true,message:"Email is verified"})
+    } catch (error) {
+        return res.status(500).json({status:false,message:"Failed to verify Email OTP",error})
+    }
+}
+
+const sendPhoneVerificationOTP = async(req,res)=>{
+    try {
+        const {phoneNumber} = req.body
+    const user = await User.find({phoneNumber})
+    if(!user){
+        return res.status(404).json({status:false,message:"User not Found"})
+    }
+    await user.sendPhoneVerificationOTP()
+    await user.save()
+    return res.status(200).json({status:true,message:"OTP sent to Phone Number"})
+    } catch (error) {
+        return res.status(500).json({status:false,message:"Somthing went wrong"})
+    }
+    
+}
+
+const verifyPhoneOTP = async(req,res)=>{
+    try {
+        const {phoneNumber,otp} = req.body
+        const user = await User.find({phoneNumber})
+        if(!user){
+            return res.status(404).json({status:false,message:"User not found"})
+        }
+        await user.verifyPhoneOTP()
+        await user.save()
+        return res.status(200).json({status:true,message:"Phone Number Verified Successfully"})
+    } catch (error) {
+        return res.status(500).json({status:false,message:"Something wwent wrong"})
+    }
+}
+ export {registerUser,loginUser,logoutUser,updateAccountDetails,updateUserAvatar,getCurrentUser,changeCurrentPassword,forgotPassword,passwordOTPverification,resetPassword,sendEmailVerificationOTP,sendPhoneVerificationOTP,verifyEmailOTP,verifyPhoneOTP}
 

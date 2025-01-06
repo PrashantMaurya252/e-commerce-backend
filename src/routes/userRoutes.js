@@ -1,7 +1,7 @@
 import { upload } from "../middleware/multer.js";
 import {Router} from 'express'
 import { verifyJWT } from "../middleware/authMiddleware.js";
-import { changeCurrentPassword, dashboard, forgotPassword, getCurrentUser, googleCallback, googleLogin, loginUser, logout, logoutUser, passwordOTPverification, registerUser, resetPassword, updateAccountDetails, updateUserAvatar } from "../controllers/userController.js";
+import { changeCurrentPassword, dashboard, forgotPassword, getCurrentUser, googleCallback, googleLogin, loginUser, logout, logoutUser, passwordOTPverification, registerUser, resetPassword, sendEmailVerificationOTP, sendPhoneVerificationOTP, updateAccountDetails, updateUserAvatar, verifyEmailOTP, verifyPhoneOTP } from "../controllers/userController.js";
 import verifyAdmin from "../middleware/adminMiddleware.js";
 import { stripePayment } from "../controllers/productController.js";
 
@@ -33,6 +33,10 @@ router.route('/dashboard').get(dashboard)
 router.route('/forgot-password').post(forgotPassword)
 router.route('/password-otp-verification').post(passwordOTPverification)
 router.route('/reset-password').post(resetPassword)
+router.route("/send-email-otp").post(verifyJWT,sendEmailVerificationOTP)
+router.route("/verify-email-otp").post(verifyJWT,verifyEmailOTP)
+router.route("/send-phone-otp").post(verifyJWT,sendPhoneVerificationOTP)
+router.route("/verify-phone-otp").post(verifyJWT,verifyPhoneOTP)
 
 
 

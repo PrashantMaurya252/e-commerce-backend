@@ -61,6 +61,14 @@ const userSchema = new mongoose.Schema({
     resetPasswordExpire: Date,
     phoneVerificationOTP:Number,
     phoneVerificationOTPExpire:Date,
+    isPhoneVerified:{
+        type:Boolean,
+        default:false
+    },
+    isEmailVerified:{
+        type:Boolean,
+        default:false
+    },
     emailVerificationOTP:Number,
     emailVerifyOTPExpire:Date,
     favourites:[
@@ -141,6 +149,7 @@ userSchema.methods.sendingEmailVerificationOTP=async function(nodeMailerTranspor
 
 userSchema.methods.verifyEmailOTP = async function(otp){
     if(this.emailVerificationOTP === otp && Date.now() < this.emailVerifyOTPExpire){
+        this.isEmailVerified = true
         this.emailVerificationOTP = null
         this.emailVerifyOTPExpire = null
         return true
@@ -167,12 +176,18 @@ userSchema.methods.sendingPhoneVerificationOTP = async function(){
 
 userSchema.methods.verifyPhoneOTP = async function(otp){
     if(this.phoneVerificationOTP === otp && Date.now() < phoneVerificationOTPExpire){
+        this.isPhoneVerified = true
         this.phoneVerificationOTP = null
         this.phoneVerificationOTPExpire = null
         return true
     }
     return false
 }
+
+userSchema.pre("save",function(next){
+    this.isVerified = this.isEmailVerified && this.isPhoneVerified
+    next()
+})
 
 
 export const User = mongoose.model("User",userSchema)
