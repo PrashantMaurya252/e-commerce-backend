@@ -1,16 +1,16 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { Twilio } from "twilio";
+import  Twilio  from "twilio";
 
 
 const userSchema = new mongoose.Schema({
     username:{
         type:String,
         required:false,
-        unique:true,
+        
         lowercase:true,
-        index:true,
+        
         trim:true
     },
     email:{
@@ -124,7 +124,7 @@ userSchema.methods.generateAccessToken =  function(){
         {
             _id:this._id,
             email:this.email,
-            username:this.username,
+            
             fullName:this.fullName
         },
         process.env.ACCESS_TOKEN_SECRET,

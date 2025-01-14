@@ -7,15 +7,16 @@ import { stripePayment } from "../controllers/productController.js";
 
 const router = Router()
 
-router.route('/register').post(
-    upload.fields([
-        {
-            name:'avatar',
-            maxCount:1
-        }
+// router.route('/register').post(
+//     upload.fields([
+//         {
+//             name:'avatar',
+//             maxCount:1
+//         }
 
-    ]),registerUser
-)
+//     ]),registerUser
+// )
+router.route('/register').post(registerUser)
 
 router.route('/login').post(loginUser)
 
